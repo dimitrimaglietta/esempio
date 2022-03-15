@@ -1,25 +1,25 @@
 package main
 
 import (
- "flag"
- "fmt"
- "os"
- "os/signal"
- "path/filepath"
- "syscall"
-
- "github.com/dgraph-io/badger"
- "github.com/spf13/viper"
-
- abci "github.com/tendermint/tendermint/abci/types"
- cfg "github.com/tendermint/tendermint/config"
- tmflags "github.com/tendermint/tendermint/libs/cli"
- "github.com/tendermint/tendermint/libs/log"
- nm "github.com/tendermint/tendermint/node"
- "github.com/tendermint/tendermint/internal/p2p"
- "github.com/tendermint/tendermint/privval"
- "github.com/tendermint/tendermint/light/proxy"
-)
+    "flag"
+    "fmt"
+    "os"
+    "os/signal"
+    "path/filepath"
+    "syscall"
+   
+    "github.com/dgraph-io/badger"
+    "github.com/spf13/viper"
+   
+    abci "github.com/tendermint/tendermint/abci/types"
+    cfg "github.com/tendermint/tendermint/config"
+    //tmflags "github.com/tendermint/tendermint/libs/cli/flags"
+    "github.com/tendermint/tendermint/libs/log"
+    nm "github.com/tendermint/tendermint/node"
+    //"../tendermint/internal/p2p"
+    "github.com/tendermint/tendermint/privval"
+    "github.com/tendermint/tendermint/light/proxy"
+   )
 
 var configFile string
 
