@@ -16,7 +16,7 @@ import (
     //tmflags "github.com/tendermint/tendermint/libs/cli/flags"
     "github.com/tendermint/tendermint/libs/log"
     nm "github.com/tendermint/tendermint/node"
-    //"../tendermint/internal/p2p"
+    "../tendermint/internal/p2p"
     "github.com/tendermint/tendermint/privval"
     "github.com/tendermint/tendermint/light/proxy"
    )
