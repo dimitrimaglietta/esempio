@@ -15,6 +15,7 @@ import (
  cfg "github.com/tendermint/tendermint/config"
  "github.com/tendermint/tendermint/libs/log"
  nm "github.com/tendermint/tendermint/node"
+ "github.com/tendermint/tendermint/internal/p2p"
  "github.com/tendermint/tendermint/privval"
 )
 
