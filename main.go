@@ -5,18 +5,26 @@ import (
  "fmt"
  "os"
  "os/signal"
+ "path/filepath"
  "syscall"
 
  "github.com/dgraph-io/badger"
+ "github.com/spf13/viper"
 
- abciserver "github.com/tendermint/tendermint/abci/server"
+ abci "github.com/tendermint/tendermint/abci/types"
+ cfg "github.com/tendermint/tendermint/config"
+ tmflags "github.com/tendermint/tendermint/libs/cli/flags"
  "github.com/tendermint/tendermint/libs/log"
+ nm "github.com/tendermint/tendermint/node"
+ "github.com/tendermint/tendermint/internal/p2p"
+ "github.com/tendermint/tendermint/privval"
+ "github.com/tendermint/tendermint/proxy"
 )
 
-var socketAddr string
+var configFile string
 
 func init() {
- flag.StringVar(&socketAddr, "socket-addr", "unix://example.sock", "Unix domain socket address")
+ flag.StringVar(&configFile, "config", "$HOME/.tendermint/config/config.toml", "Path to config.toml")
 }
 
 func main() {
@@ -30,21 +38,71 @@ func main() {
 
  flag.Parse()
 
- logger, err := log.NewDefaultLogger(log.LogFormatPlain, log.LogLevelInfo, false)
+ node, err := newTendermint(app, configFile)
  if err != nil {
-  fmt.Fprintf(os.Stderr, "failed to configure logger: %v", err)
-  os.Exit(1)
+  fmt.Fprintf(os.Stderr, "%v", err)
+  os.Exit(2)
  }
 
- server := abciserver.NewSocketServer(socketAddr, app)
- server.SetLogger(logger)
- if err := server.Start(); err != nil {
-  fmt.Fprintf(os.Stderr, "error starting socket server: %v", err)
-  os.Exit(1)
- }
- defer server.Stop()
+ node.Start()
+ defer func() {
+  node.Stop()
+  node.Wait()
+ }()
 
  c := make(chan os.Signal, 1)
  signal.Notify(c, os.Interrupt, syscall.SIGTERM)
  <-c
+}
+
+func newTendermint(app abci.Application, configFile string) (*nm.Node, error) {
+ // read config
+ config := cfg.DefaultValidatorConfig()
+ config.RootDir = filepath.Dir(filepath.Dir(configFile))
+ viper.SetConfigFile(configFile)
+ if err := viper.ReadInConfig(); err != nil {
+  return nil, fmt.Errorf("viper failed to read config file: %w", err)
+ }
+ if err := viper.Unmarshal(config); err != nil {
+  return nil, fmt.Errorf("viper failed to unmarshal config: %w", err)
+ }
+ if err := config.ValidateBasic(); err != nil {
+  return nil, fmt.Errorf("config is invalid: %w", err)
+ }
+
+ // create logger
+ logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout))
+ var err error
+ logger, err = tmflags.ParseLogLevel(config.LogLevel, logger, cfg.DefaultLogLevel)
+ if err != nil {
+  return nil, fmt.Errorf("failed to parse log level: %w", err)
+ }
+
+ // read private validator
+ pv := privval.LoadFilePV(
+  config.PrivValidatorKeyFile(),
+  config.PrivValidatorStateFile(),
+ )
+
+ // read node key
+ nodeKey, err := p2p.LoadNodeKey(config.NodeKeyFile())
+ if err != nil {
+  return nil, fmt.Errorf("failed to load node's key: %w", err)
+ }
+
+ // create node
+ node, err := nm.NewNode(
+  config,
+  pv,
+  nodeKey,
+  abcicli.NewLocalClientCreator(app),
+  nm.DefaultGenesisDocProviderFunc(config),
+  nm.DefaultDBProvider,
+  nm.DefaultMetricsProvider(config.Instrumentation),
+  logger)
+ if err != nil {
+  return nil, fmt.Errorf("failed to create new Tendermint node: %w", err)
+ }
+
+ return node, nil
 }
