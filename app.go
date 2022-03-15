@@ -2,11 +2,11 @@ package main
 
 import (
  abcitypes "github.com/tendermint/tendermint/abci/types"
+ "github.com/dgraph-io/badger"
+ "bytes"
 )
 
 var _ abcitypes.Application = (*KVStoreApplication)(nil)
-
-import "github.com/dgraph-io/badger"
 
 type KVStoreApplication struct {
  db           *badger.DB
@@ -38,9 +38,7 @@ func (app *KVStoreApplication) DeliverTx(req abcitypes.RequestDeliverTx) abcityp
 	}
    
 	return abcitypes.ResponseDeliverTx{Code: 0}
-}   
-
-import "bytes"
+} 
 
 func (app *KVStoreApplication) isValid(tx []byte) (code uint32) {
  // check format
