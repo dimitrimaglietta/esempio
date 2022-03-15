@@ -13,7 +13,7 @@ import (
 
  abci "github.com/tendermint/tendermint/abci/types"
  cfg "github.com/tendermint/tendermint/config"
- tmflags "github.com/tendermint/tendermint/libs/cli/flags"
+ tmflags "github.com/tendermint/tendermint/libs/cli"
  "github.com/tendermint/tendermint/libs/log"
  nm "github.com/tendermint/tendermint/node"
  "github.com/tendermint/tendermint/internal/p2p"
